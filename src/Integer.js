@@ -2,6 +2,7 @@ const Range = require('./Range');
 
 const _patternRe = /^[-+]?\d+(\.\.[-+]?\d+)?$/;
 const _rangeRe = /^(?<from>[-+]?\d+)\.\.(?<to>[-+]?\d+)$/;
+const _rangeSeparator = '..';
 
 class IntegerRange extends Range {
     get patternRe() {
@@ -10,6 +11,10 @@ class IntegerRange extends Range {
     
     get rangeRe() {
         return _rangeRe;
+    }
+    
+    get rangeSeparator() {
+        return _rangeSeparator;
     }
     
     convertItem(item) {
@@ -22,7 +27,7 @@ class IntegerRange extends Range {
         return converted;
     }
     
-    explode(from, to) {
+    expand(from, to) {
         if (from == null) {
             throw new Error(`Invalid "from" value: ${from}`);
         }
@@ -49,6 +54,18 @@ class IntegerRange extends Range {
         }
         
         return array;
+    }
+    
+    sortFn(a, b) {
+        return a > b ? 1 : a < b ? -1 : 0;
+    }
+    
+    equals(a, b) {
+        return a === b;
+    }
+    
+    nextInRange(a, b) {
+        return b === a + 1;
     }
 };
 

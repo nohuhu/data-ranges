@@ -7,7 +7,7 @@ module.exports = function makeSuite(type, def, ctor) {
             const { invalid } = def;
             
             invalid.forEach(input => {
-                it(`should not accept invalid input: ${input}`, function() {
+                it(`should not accept invalid input: "${input}"`, function() {
                     expect(function() {
                         new ctor(input);
                     })
@@ -20,7 +20,7 @@ module.exports = function makeSuite(type, def, ctor) {
             const { valid } = def;
             
             valid.forEach(input => {
-                it(`should accept valid input: ${input}`, function() {
+                it(`should accept valid input: "${input}"`, function() {
                     expect(function() {
                         new ctor(input);
                     })
@@ -32,60 +32,76 @@ module.exports = function makeSuite(type, def, ctor) {
         describe("methods", function() {
             let object;
             
-            describe("constructor", function() {
-                const methodTests = def['new'];
-                
-                it("should not throw exception on input", function() {
-                    expect(function() {
-                        object = new ctor(methodTests.input);
-                    })
-                    .to.not.throwException();
-                });
-                
-                it("should return range object", function() {
-                    expect(object instanceof ctor).to.be(true);
-                });
-                
-                it("should return correct size", function() {
-                    expect(object.size).to.be(methodTests.size);
-                });
-                
-                describe("has()", function() {
-                    describe("list", function() {
-                        it("should return true on list has() check", function() {
-                            expect(object.has(methodTests.in_list)).to.be(true);
+            function makeMethodSuite(method, methodTests) {
+                describe(method, function() {
+                    if (method === 'new') {
+                        it("should not throw exception on input", function() {
+                            expect(function() {
+                                object = new ctor(methodTests.input);
+                            })
+                            .to.not.throwException();
                         });
+                        
+                        it("should return range object", function() {
+                            expect(object instanceof ctor).to.be(true);
+                        });
+                    }
+                    else {
+                        it("should not throw exception on input", function() {
+                            expect(function() {
+                                object[method](methodTests.input);
+                            })
+                            .to.not.throwException();
+                        });
+                    }
+                    
+                    it("should return correct size", function() {
+                        expect(object.size).to.be(methodTests.size);
                     });
                     
-                    describe("scalar", function() {
-                        methodTests.in_list.forEach(value => {
-                            it(`should return true on has(${value})`, function() {
-                                expect(object.has(value)).to.be(true);
+                    describe("has()", function() {
+                        describe("list", function() {
+                            it("should return true on list has() check", function() {
+                                expect(object.has(methodTests.has_list)).to.be(true);
+                            });
+                        });
+                        
+                        describe("scalar", function() {
+                            methodTests.has_list.forEach(value => {
+                                it(`should return true on has(${value})`, function() {
+                                    expect(object.has(value)).to.be(true);
+                                });
                             });
                         });
                     });
-                });
-                
-                describe("range output", function() {
-                    it("should return correct array", function() {
-                        expect(object.toArray()).to.eql(methodTests.range_array);
+                    
+                    describe("hasItems", function() {
+                        it("should return correct list of missing items", function() {
+                            const missing = object.hasItems(methodTests.has_in);
+                            
+                            expect(missing).to.eql(methodTests.has_out);
+                        });
                     });
                     
-                    it("should return correct string", function() {
-                        expect(object.toString()).to.eql(methodTests.range_string);
-                    });
-                });
-                
-                describe("collapsed output", function() {
-                    it("should return correct array", function() {
-                        expect(object.collapse().toArray()).to.eql(methodTests.collapsed_array);
+                    describe("range output", function() {
+                        it("should return correct array", function() {
+                            expect(object.valueOf()).to.eql(methodTests.valueOf);
+                        });
+                        
+                        it("should return correct string", function() {
+                            expect(object.toString()).to.eql(methodTests.toString);
+                        });
                     });
                     
-                    it("should return correct string", function() {
-                        expect(object.collapse().toString()).to.eql(methodTests.collapsed_string);
+                    describe("collapsed output", function() {
+                        it("should return correct string", function() {
+                            expect(object.collapse()).to.eql(methodTests.collapsed);
+                        });
                     });
                 });
-            });
+            }
+            
+            ['new', 'add', 'remove'].forEach(method => makeMethodSuite(method, def[method]));
         });
     });
 };
