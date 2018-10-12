@@ -1,7 +1,7 @@
 const expect = require('expect.js');
-const Range = require('../src/Range');
+const path = require('path');
 
-module.exports = function makeSuite(type, def, ctor) {
+const makeSuite = (type, def, ctor) => {
     describe(`type: ${type}`, function() {
         describe("invalid input", function() {
             const { invalid } = def;
@@ -104,4 +104,36 @@ module.exports = function makeSuite(type, def, ctor) {
             ['new', 'add', 'remove'].forEach(method => makeMethodSuite(method, def[method]));
         });
     });
+};
+
+const toArray = (...strings) => {
+    let result = [];
+    
+    for (let str of strings) {
+        result = [].concat(result, str.split(' ').map(item => parseInt(item)));
+    }
+    
+    return result;
+};
+
+const makeTests = (type, tests) => {
+    let Range = require(path.join('..', 'src', type));
+    
+    describe(`${type} ranges`, function() {
+        describe("module tests", function() {
+            it("should export Range constructor", function() {
+                expect(typeof Range).to.be('function');
+            });
+        });
+        
+        describe("functional tests", function() {
+            tests.forEach(test => makeSuite(test.type, test, Range));
+        });
+    });
+};
+
+module.exports = {
+    makeSuite,
+    makeTests,
+    toArray,
 };

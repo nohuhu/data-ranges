@@ -1,6 +1,6 @@
 const Range = require('./Range');
 
-const _patternRe = /^[-+]?\d+(\.\.[-+]?\d+)?$/;
+const _patternRe = /^[-+]?\d+(?:\.\.[-+]?\d+)?$/;
 const _rangeRe = /^(?<from>[-+]?\d+)\.\.(?<to>[-+]?\d+)$/;
 const _rangeSeparator = '..';
 

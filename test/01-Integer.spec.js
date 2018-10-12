@@ -1,28 +1,16 @@
-const toArray = (...strings) => {
-    let result = [];
-    
-    for (let str of strings) {
-        result = [].concat(result, str.split(' ').map(item => parseInt(item)));
-    }
-    
-    return result;
-};
+const { makeTests, toArray } = require('./makeSuite');
 
-const tests = [{
+makeTests('Integer', [{
     type: 'integer',
     
-    invalid: [
-        '1, 2, 5; 7-10; foo', '42..bar', null, undefined, '', {}, NaN
-    ],
+    invalid: ['1, 2, 5; 7-10; foo', '42..bar', null, undefined, '', {}, NaN],
     
     valid: [
         '-100..-20', '0, 1, 2, 5; 7..10, 15..20', 30, '40..50',
     ],
     
     'new': {
-        input: [
-            '0, 1, 2, 5; 7..10, 15..20', 30, '40..50', '-42..-45',
-        ],
+        input: ['0, 1, 2, 5; 7..10, 15..20', 30, '40..50', '-42..-45'],
         
         has_list: toArray('-42 -45 0 1 2 5 7 8 9 10 15 16 17 18 19 20 30 40',
                           '41 42 43 44 45 46 47 48 49 50'),
@@ -109,11 +97,4 @@ const tests = [{
         
         size: 21,
     }
-}];
-
-const makeSuite = require('./makeSuite');
-const IntegerRange = require('../src/Integer');
-
-describe("Integer ranges", function() {
-    tests.forEach(test => makeSuite(test.type, test, IntegerRange));
-});
+}]);

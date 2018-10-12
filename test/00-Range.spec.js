@@ -1,6 +1,6 @@
 const expect = require('expect.js');
 
-describe("basic stuff", function() {
+describe("base Range", function() {
     let Range;
     
     it("should compile", function() {
