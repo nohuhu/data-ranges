@@ -1,30 +1,31 @@
-const Range = require('./Range');
+const IntegerBox = require('../box/Integer');
+const Range = require('./Base');
 
-const _patternRe = /^[-+]?\d+(?:\.\.[-+]?\d+)?$/;
-const _rangeRe = /^(?<from>[-+]?\d+)\.\.(?<to>[-+]?\d+)$/;
-const _rangeSeparator = '..';
+const _patternRe = /^\s*[-+]?\d+\s*(?:\.\.\s*[-+]?\d+)?\s*$/;
+const _rangeRe = /^\s*(?<from>[-+]?\d+)\s*\.\.\s*(?<to>[-+]?\d+)\s*$/;
+const _delimiter = '..';
 
 class IntegerRange extends Range {
-    get patternRe() {
+    static get patternRe() {
         return _patternRe;
     }
     
-    get rangeRe() {
+    static get rangeRe() {
         return _rangeRe;
     }
     
-    get rangeSeparator() {
-        return _rangeSeparator;
+    get size() {
+        return this.end.valueOf() - this.start.valueOf() + 1;
     }
     
-    convertItem(item) {
-        const converted = parseInt(item);
+    wrap(value) {
+        const converted = parseInt(value);
         
         if (isNaN(converted)) {
-            throw new Error(`Invalid item: ${item}`);
+            throw new Error(`Invalid value: ${value}`);
         }
         
-        return converted;
+        return super.wrap(converted);
     }
     
     expand(from, to) {
@@ -36,14 +37,14 @@ class IntegerRange extends Range {
             throw new Error(`Invalid "to" value: ${to}`);
         }
         
-        from = this.convertItem(from);
-        to = this.convertItem(to);
+        from = this.wrap(from);
+        to = this.wrap(to);
         
-        if (from === to) {
+        if (from.equals(to)) {
             return [from];
         }
         
-        if (from > to) {
+        if (from.isGreaterThan(to)) {
             [to, from] = [from, to];
         }
         
@@ -60,13 +61,12 @@ class IntegerRange extends Range {
         return a > b ? 1 : a < b ? -1 : 0;
     }
     
-    equals(a, b) {
-        return a === b;
-    }
-    
     nextInRange(a, b) {
         return b === a + 1;
     }
 };
+
+IntegerRange.prototype.Box = IntegerBox;
+IntegerRange.prototype.delimiter = _delimiter;
 
 module.exports = IntegerRange;
