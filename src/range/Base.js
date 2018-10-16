@@ -49,6 +49,10 @@ class Range {
         return new this.Box(value);
     }
     
+    clone() {
+        return new this.constructor(this.start.valueOf(), this.end.valueOf());
+    }
+    
     relatedTo(other) {
         if (other == null) {
             return false;
@@ -81,7 +85,7 @@ class Range {
     
     absorb(other) {
         if (other == null) {
-            return false;
+            return this;
         }
         
         if (other instanceof Range) {
@@ -105,6 +109,85 @@ class Range {
         return this;
     }
     
+    remove(other) {
+        if (other == null) {
+            return [this];
+        }
+        
+        if (!(other instanceof Range) && !(other instanceof Box)) {
+            other = this.wrap(other);
+        }
+        
+        // The other range is outside of this one:
+        //              [ x, y ]          <- this
+        //     [ n, m ]                   <- other, or
+        //                       [ m, n ] <- other
+        if (other.end.isLesserThan(this.start) || other.start.isGreaterThan(this.end)) {
+            // No change
+            return [this];
+        }
+        
+        // The other range is equal to this one:
+        //              [ x, y ]          <- this
+        //              [ x, y ]          <- other
+        else if (this.start.equals(other.start) && this.end.equals(other.end)) {
+            // All values are removed
+            return [];
+        }
+        
+        // The other range is completely including this one:
+        //              [ x, y ]          <- this
+        //          [ x - n, y + m ]      <- other
+        else if (other.start.isLesserThan(this.start) && other.end.isGreaterThan(this.end)) {
+            // Ditto
+            return [];
+        }
+        
+        // The other range overlaps with this one on the start side:
+        //                  [ x, y ]      <- this
+        //       [ x - n, y - m ]         <- other
+        else if (other.start.isLesserThan(this.start) && other.end.isLesserThan(this.end)) {
+            // Other end is the new start
+            this.start = other.end.clone();
+            
+            return [this];
+        }
+        
+        // The other range overlaps with this one on the end side:
+        //           [ x, y ]             <- this
+        //              [ x + n, y + m ]  <- other
+        else if (other.start.isGreaterThan(this.start) && other.end.isGreaterThan(this.end)) {
+            // Other start is the new end
+            this.end = other.start.clone();
+            
+            return [this];
+        }
+        
+        // The only option left is that the other range is contained within this one:
+        //         [   x,     y       ]   <- this
+        //           [ x + n, y - m ]     <- other
+        else {
+            const range1 = new this.constructor(this.start.valueOf(), other.start.prev());
+            const range2 = new this.constructor(other.end.next(), this.end.valueOf());
+            
+            return [range1, range2];
+        }
+    }
+    
+    *by(precision, options) {
+        const { start, end } = this;
+        
+        yield start.valueOf();
+        
+        let current = start;
+        
+        while (current.isLesserThan(end)) {
+            current = this.wrap(current.next(precision, options));
+            
+            yield current.valueOf();
+        }
+    }
+    
     valueOf() {
         if (this.start.equals(this.end)) {
             return this.start.valueOf();
@@ -119,6 +202,14 @@ class Range {
         }
         
         return this.start.toString() + this.delimiter + this.end.toString();
+    }
+    
+    sortFn() {
+        throw new Error("sortFn() should be implemented in a subclass.");
+    }
+    
+    equals(a, b) {
+        throw new Error("equals() should be implemented in a subclass.");
     }
 }
 

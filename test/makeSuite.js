@@ -3,111 +3,200 @@ const path = require('path');
 
 const RangeSet = require('../src/RangeSet');
 
+const desc = (want) => {
+    if (Array.isArray(want)) {
+        return want.length === 0 ? "[empty array]" : want.join(', ');
+    }
+    
+    return want === '' ? "empty string" : want + '';
+}
+
 const makeSuite = (type, def, ctor) => {
-    describe(`type: ${type}`, function() {
-        describe("invalid input", function() {
-            const { invalid } = def;
-            
-            invalid.forEach(input => {
-                it(`should not accept invalid input: "${input}"`, function() {
-                    expect(function() {
-                        new RangeSet(ctor, input);
-                    })
-                    .to.throwException();
-                });
-            });
-        });
+    const { name, input, exception, method } = def;
+    
+    if (!name) {
+        throw new Exception("Test name is required!");
+    }
+    
+    describe(name, function() {
+        let object;
         
-        describe("valid input", function() {
-            const { valid } = def;
+        function testContains(checks) {
+            if (checks == null) {
+                return;
+            }
             
-            valid.forEach(input => {
-                it(`should accept valid input: "${input}"`, function() {
-                    expect(function() {
-                        new RangeSet(ctor, input);
-                    })
-                    .to.not.throwException();
-                });
-            });
-        });
-        
-        describe("methods", function() {
-            let object;
-            
-            function makeMethodSuite(method, methodTests) {
-                describe(method, function() {
-                    if (method === 'new') {
-                        it("should not throw exception on input", function() {
-                            expect(function() {
-                                object = new RangeSet(ctor, methodTests.input);
-                            })
-                            .to.not.throwException();
+            checks.forEach(check => {
+                const { input, want, checkEach } = check;
+                
+                if (Array.isArray(input)) {
+                    describe(`contains(), input: ${desc(input)}`, function() {
+                        it(`should return ${desc(want)} when passed in array`, function() {
+                            const have = object.contains(input);
+                            
+                            expect(have).to.eql(want);
                         });
                         
-                        it("should return RangeSet object", function() {
-                            expect(object instanceof RangeSet).to.be(true);
+                        if (checkEach) {
+                            input.forEach(value => {
+                                it(`should return ${desc(want)} for ${value}`, function() {
+                                    const have = object.contains(value);
+                                    
+                                    expect(have).to.be(want);
+                                });
+                            });
+                        }
+                    });
+                }
+                else {
+                    describe(`contains(), input: ${desc(input)}`, function() {
+                        it(`should return ${desc(want)}`, function() {
+                            const have = object.contains(input);
+                            
+                            expect(have).to.be(want);
+                        });
+                    });
+                }
+            });
+        }
+        
+        function testContainsAll(checks) {
+            if (checks == null) {
+                return;
+            }
+            
+            checks.forEach(check => {
+                const { input, want } = check;
+                
+                describe(`containsAll(), input: ${desc(input)}`, function() {
+                    it(`should return ${desc(want)}`, function() {
+                        const have = object.containsAll(input);
+                        
+                        expect(have).to.eql(want);
+                    });
+                });
+            });
+        }
+        
+        function testBy(want) {
+            if (want == null) {
+                return;
+            }
+            
+            const wantCopy = [...want];
+            
+            describe("by()", function() {
+                let result = [];
+                
+                it("should iterate over values", function() {
+                    for (let have of object.by()) {
+                        expect(have).to.be(wantCopy.shift());
+                        result.push(have);
+                    }
+                });
+                
+                it("should return all expected values", function() {
+                    expect(result).to.eql(want);
+                });
+            });
+        }
+        
+        function testToString(want) {
+            if (want == null) {
+                return;
+            }
+            
+            describe("toString()", function() {
+                it(`should return ${desc(want)}`, function() {
+                    expect(object.toString()).to.be(want);
+                });
+            });
+        }
+        
+        function testSize(want) {
+            if (want == null) {
+                return;
+            }
+            
+            describe("size getter", function() {
+                it(`should return ${want}`, function() {
+                    expect(object.size).to.be(want);
+                });
+            });
+        }
+        
+        describe("construction", function() {
+            const ctorFn = function() {
+                if ('input' in def) {
+                    object = new RangeSet(ctor, input);
+                }
+                else {
+                    object = new RangeSet(ctor);
+                }
+            };
+            
+            if (exception) {
+                it("should throw exception", function() {
+                    expect(ctorFn).to.throwException(exception);
+                });
+            }
+            else {
+                it("should not throw exception", function() {
+                    expect(ctorFn).to.not.throwException();
+                });
+            }
+        });
+        
+        if (method) {
+            const methodInput = def.methodInput;
+            
+            if (typeof method === 'function') {
+                describe("calling custom test code", function() {
+                    const methodFn = function() {
+                        method(object, methodInput);
+                    };
+                    
+                    if (exception) {
+                        it("should throw exception", function() {
+                            expect(methodFn).to.throwException(exception);
                         });
                     }
                     else {
-                        it("should not throw exception on input", function() {
-                            expect(function() {
-                                debugger;
-                                object[method](methodTests.input);
-                            })
-                            .to.not.throwException();
+                        it("should not throw exception", function() {
+                            expect(methodFn).not.to.throwException();
                         });
                     }
-                    
-                    it("should return correct size", function() {
-                        expect(object.size).to.be(methodTests.size);
-                    });
-                    
-                    describe("has()", function() {
-                        describe("list", function() {
-                            it("should return true on list has() check", function() {
-                                expect(object.has(methodTests.has_list)).to.be(true);
-                            });
-                        });
-                        
-                        describe("scalar", function() {
-                            methodTests.has_list.forEach(value => {
-                                it(`should return true on has(${value})`, function() {
-                                    expect(object.has(value)).to.be(true);
-                                });
-                            });
-                        });
-                    });
-                    
-                    describe("hasItems", function() {
-                        it("should return correct list of missing items", function() {
-                            const missing = object.hasItems(methodTests.has_in);
-                            
-                            expect(missing).to.eql(methodTests.has_out);
-                        });
-                    });
-                    
-                    xdescribe("range output", function() {
-                        it("should return correct array", function() {
-                            expect(object.valueOf()).to.eql(methodTests.valueOf);
-                        });
-                        
-                        it("should return correct string", function() {
-                            expect(object.toString()).to.eql(methodTests.toString);
-                        });
-                    });
-                    
-                    describe("collapsed output", function() {
-                        it("should return correct string", function() {
-                            expect(object.collapse()).to.eql(methodTests.collapsed);
-                        });
-                    });
                 });
             }
-            
-            makeMethodSuite('new', def['new']);
-            makeMethodSuite('add', def.add);
-//             ['new', 'add', 'remove'].forEach(method => makeMethodSuite(method, def[method]));
-        });
+            else {
+                if (methodInput == null) {
+                    throw new Error("methodInput is required with method!");
+                }
+                
+                describe(`calling ${method}`, function() {
+                    const methodFn = function() {
+                        object[method](methodInput);
+                    };
+                    
+                    if (exception) {
+                        it("should throw exception", function() {
+                            except(methodFn).to.throwException();
+                        });
+                    }
+                    else {
+                        it("should not throw exception", function() {
+                            expect(methodFn).to.not.throwException();
+                        });
+                    }
+                });
+            }
+        }
+        
+        testContains(def.contains);
+        testContainsAll(def.containsAll);
+        testBy(def.by);
+        testToString(def.stringify);
+        testSize(def.size);
     });
 };
 
@@ -138,7 +227,6 @@ const makeTests = (type, tests) => {
 };
 
 module.exports = {
-    makeSuite,
     makeTests,
     toArray,
 };

@@ -3,6 +3,10 @@ class Box {
         this.value = value;
     }
     
+    clone() {
+        return new this.constructor(this.value);
+    }
+    
     get size() {
         return 1;
     }
@@ -16,14 +20,26 @@ class Box {
     }
     
     equals(other) {
+        if (typeof other === 'object' && ('start' in other) && ('end' in other)) {
+            return other.start.equals(this.value) && other.end.equals(this.value);
+        }
+        
         return this.value === (other instanceof Box ? other.value : other);
     }
     
     isGreaterThan(other) {
+        if (typeof other === 'object' && ('start' in other) && ('end' in other)) {
+            return other.end.isLesserThan(this.value);
+        }
+        
         return this.value > (other instanceof Box ? other.value : other);
     }
     
     isLesserThan(other) {
+        if (typeof other === 'object' && ('start' in other) && ('end' in other)) {
+            return other.start.isGreaterThan(this.value);
+        }
+        
         return this.value < (other instanceof Box ? other.value : other)
     }
     

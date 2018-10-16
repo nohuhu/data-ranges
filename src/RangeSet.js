@@ -34,22 +34,71 @@ class RangeSet {
         const validated = this.validate(values);
         
         for (let value of validated) {
-            const related = this._find(value);
+            let { range, index } = this._find(value);
             
-            if (related instanceof BaseRange) {
-                let size = this._size - related.size;
-                
-                related.absorb(value);
-                
-                this._size = size + related.size;
+            if (range instanceof BaseRange) {
+                this._absorb(range, index, value);
             }
             else {
-                this._values.splice(related, 0, value);
+                this._values.splice(index, 0, value);
                 this._size += value.size;
             }
         }
         
         return this;
+    }
+    
+    remove(values) {
+        const validated = this.validate(values);
+        const existing = this._values;
+        
+        for (let value of validated) {
+            for (let i = 0; i < existing.length;) {
+                const range = existing[i];
+                
+                const sizeWas = this._size - range.size;
+                const remaining = range.remove(value);
+                
+                if (remaining.length === 1 && remaining[0] === range) {
+                    i++;
+                }
+                else {
+                    const sizeIs = remaining.reduce((acc, item) => (acc + item.size), 0);
+                    
+                    existing.splice(i, 1, ...remaining);
+                    this._size = sizeWas + sizeIs;
+                    
+                    i += remaining.length === 0 ? 0 : remaining.length - 1;
+                }
+            }
+        }
+        
+        return this;
+    }
+    
+    _absorb(range, index, value) {
+        const values = this._values;
+        
+        let sizeWas = this._size - range.size;
+        range.absorb(value);
+        this._size = sizeWas + range.size;
+        
+        for (let i = 0; i < values.length;) {
+            let current = values[i];
+            
+            if (current !== range && range.relatedTo(current)) {
+                sizeWas = this._size - range.size - current.size;
+                
+                values.splice(i, 1);
+                range.absorb(current);
+                
+                this._size = sizeWas + range.size;
+                
+                continue;
+            }
+            
+            i++;
+        }
     }
     
     _find(value, strict) {
@@ -61,23 +110,23 @@ class RangeSet {
         
         // Optimize trivial cases
         if (values.length === 0) {
-            return 0;
+            return { index: 0 };
         }
         // Most often values are added sequentially so it makes sense to test the end first
         else if (lastValue[method](value)) {
-            return lastValue;
+            return { index: lastIndex, range: lastValue };
         }
         else if (lastValue.end.isLesserThan(value.start)) {
-            return values.length;
+            return { index: values.length };
         }
         else if (firstValue[method](value)) {
-            return firstValue;
+            return { index: 0, range: firstValue };
         }
         else if (firstValue.start.isGreaterThan(value.end)) {
-            return 0;
+            return { index: 0 };
         }
         else if (values.length === 2) {
-            return 1;
+            return { index: 1 };
         }
         
         let startIndex = 0,
@@ -92,11 +141,11 @@ class RangeSet {
             midValue = values[midIndex];
             
             if (midValue[method](value)) {
-                return midValue;
+                return { index: midIndex, range: midValue };
             }
             else if (midValue.start.isGreaterThan(value)) {
                 if (midIndex === 0) {
-                    return 0;
+                    return { index: 0 };
                 }
                 
                 // Check if the range immediately preceeding the mid is related
@@ -106,17 +155,17 @@ class RangeSet {
                 const prevValue = values[prevIndex];
                 
                 if (prevValue[method](value)) {
-                    return prevValue;
+                    return { index: prevIndex, range: prevValue };
                 }
                 else if (prevValue.end.isLesserThan(value)) {
-                    return prevIndex;
+                    return { index: prevIndex };
                 }
                 
                 finishIndex = midIndex;
             }
             else if (midValue.end.isLesserThan(value)) {
                 if (midIndex >= (values.length - 1)) {
-                    return values.length;
+                    return { index: values.length };
                 }
                 
                 // Check if the range immediately following the mid is related
@@ -125,10 +174,10 @@ class RangeSet {
                 const nextValue = values[nextIndex];
                 
                 if (nextValue[method](value)) {
-                    return nextValue;
+                    return { index: nextIndex, range: nextValue };
                 }
                 else if (nextValue.start.isGreaterThan(value)) {
-                    return nextIndex;
+                    return { index: nextIndex };
                 }
                 
                 startIndex = midIndex;
@@ -136,29 +185,15 @@ class RangeSet {
         }
     }
     
-    remove(items) {
-        const validated = this.validateAndExpand(items);
-        const existing = this._explode(this._range);
-        
-        for (let item of validated) {
-            existing.delete(item);
-        }
-        
-        this._range = new Set(this._collapseRange(existing));
-        this._size = existing.size;
-        
-        return this;
-    }
-    
     get size() {
         return this._size;
     }
     
-    has(items) {
+    contains(items) {
         return this._has(items, false);
     }
     
-    hasItems(items) {
+    containsAll(items) {
         return this._has(items, true);
     }
     
@@ -254,117 +289,20 @@ class RangeSet {
         return true;
     }
     
-    convertItem(item) {
-        throw new Error("convertItem() should be implemented in a subclass.");
-    }
-    
-    valueOf() {
-        return [...this._explode(this._range)].sort(this.sortFn);
-    }
-    
     toString() {
-        return this.collapse();
+        const values = this._values.map(value => value.toString());
+        
+        return values.join(this.itemSeparator);
     }
     
-    collapse(itemSeparator) {
-        const collapsed = this._values.map(value => value.toString());
+    *by(precision, options) {
+        const values = [...this._values];
         
-//         for (let element of this._range) {
-//             collapsed.push(typeof element === 'object' ? this._stringify(element) : element);
-//         }
-        
-        return collapsed.join(this.itemSeparator);
-    }
-    
-    sortFn() {
-        throw new Error("sortFn() should be implemented in a subclass.");
-    }
-    
-    _explode(range) {
-        let result = [];
-        
-        for (let element of range) {
-            if (typeof element === 'object') {
-                const expanded = this.expand(element.start, element.end);
-                
-                result = [].concat(result, expanded);
-            }
-            else {
-                result.push(element);
-            }
+        while (values.length) {
+            const value = values.shift();
+            
+            yield *value.by(precision, options);
         }
-        
-        return new Set(result);
-    }
-    
-    _collapseRange(range) {
-        let result = [],
-            first, last, count;
-        
-        for (let item of this._sortRange(range)) {
-            // If `first` is defined, it means a range has started
-            if (first == null) {
-                first = last = item;
-                count = 1;
-                
-                continue;
-            }
-            
-            // If `last` immediately preceeds the `item` in a range,
-            // `item` becomes the next `last`
-            if (this.nextInRange(last, item)) {
-                last = item;
-                count++;
-                
-                continue;
-            }
-            
-            // If `item` doesn't follow `last` and `last` is defined,
-            // this means the current contiguous range is complete
-            if (!this.equals(first, last)) {
-                result.push({
-                    start: first,
-                    end: last,
-                    count,
-                });
-                
-                first = last = item;
-                count = 1;
-                
-                continue;
-            }
-            
-            // If `last` wasn't defined, range was never contiguous
-            result.push(first);
-            
-            first = last = item;
-            count = 1;
-        }
-        
-        // We get here when the last item has been processed
-        const value = this.equals(first, last)
-            ? first
-            : { start: first, end: last, count };
-        
-        result.push(value);
-        
-        return result;
-    }
-    
-    _sortRange(range) {
-        return new Set([...range].sort(this.sortFn));
-    }
-    
-    _stringify(element) {
-        return [element.start, element.end].join(this.Range.rangeDelimiter);
-    }
-    
-    equals(a, b) {
-        throw new Error("equals() should be implemented in a subclass.");
-    }
-    
-    nextInRange(a, b) {
-        throw new Error("nextInRange() should be implemented in a subclass.");
     }
 }
 
