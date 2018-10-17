@@ -34,79 +34,33 @@ class RangeSet {
         const validated = this.validate(values);
         
         for (let value of validated) {
-            let { range, index } = this._find(value);
-            
-            if (range instanceof BaseRange) {
-                this._absorb(range, index, value);
-            }
-            else {
-                this._values.splice(index, 0, value);
-                this._size += value.size;
-            }
+            this._splice(value);
         }
+        
+        this._recount();
         
         return this;
     }
     
     remove(values) {
         const validated = this.validate(values);
-        const existing = this._values;
         
         for (let value of validated) {
-            for (let i = 0; i < existing.length;) {
-                const range = existing[i];
-                
-                const sizeWas = this._size - range.size;
-                const remaining = range.remove(value);
-                
-                if (remaining.length === 1 && remaining[0] === range) {
-                    i++;
-                }
-                else {
-                    const sizeIs = remaining.reduce((acc, item) => (acc + item.size), 0);
-                    
-                    existing.splice(i, 1, ...remaining);
-                    this._size = sizeWas + sizeIs;
-                    
-                    i += remaining.length === 0 ? 0 : remaining.length - 1;
-                }
-            }
+            this._remove(value);
         }
+        
+        this._recount();
         
         return this;
     }
     
-    _absorb(range, index, value) {
-        const values = this._values;
-        
-        let sizeWas = this._size - range.size;
-        range.absorb(value);
-        this._size = sizeWas + range.size;
-        
-        for (let i = 0; i < values.length;) {
-            let current = values[i];
-            
-            if (current !== range && range.relatedTo(current)) {
-                sizeWas = this._size - range.size - current.size;
-                
-                values.splice(i, 1);
-                range.absorb(current);
-                
-                this._size = sizeWas + range.size;
-                
-                continue;
-            }
-            
-            i++;
-        }
-    }
-    
-    _find(value, strict) {
+    _find(value, method) {
         const values = this._values,
               lastIndex = values.length - 1,
               firstValue = values[0],
-              lastValue = values[lastIndex],
-              method = strict ? 'contains' : 'relatedTo';
+              lastValue = values[lastIndex];
+        
+        method = method || 'relatedTo';
         
         // Optimize trivial cases
         if (values.length === 0) {
@@ -116,13 +70,13 @@ class RangeSet {
         else if (lastValue[method](value)) {
             return { index: lastIndex, range: lastValue };
         }
-        else if (lastValue.end.isLesserThan(value.start)) {
+        else if (lastValue.end.isLesserThan(value)) {
             return { index: values.length };
         }
         else if (firstValue[method](value)) {
             return { index: 0, range: firstValue };
         }
-        else if (firstValue.start.isGreaterThan(value.end)) {
+        else if (firstValue.start.isGreaterThan(value)) {
             return { index: 0 };
         }
         else if (values.length === 2) {
@@ -158,7 +112,7 @@ class RangeSet {
                     return { index: prevIndex, range: prevValue };
                 }
                 else if (prevValue.end.isLesserThan(value)) {
-                    return { index: prevIndex };
+                    return { index: midIndex };
                 }
                 
                 finishIndex = midIndex;
@@ -177,12 +131,123 @@ class RangeSet {
                     return { index: nextIndex, range: nextValue };
                 }
                 else if (nextValue.start.isGreaterThan(value)) {
-                    return { index: nextIndex };
+                    return { index: midIndex };
                 }
                 
                 startIndex = midIndex;
             }
         }
+    }
+    
+    _splice(value) {
+        const values = this._values;
+        
+        if (values.length === 0) {
+            values.push(value);
+        }
+        else if (values.length === 1) {
+            const existing = values[0];
+            
+            if (existing.relatedTo(value)) {
+                existing.absorb(value);
+            }
+            else if (value.end.isLesserThan(existing.start)) {
+                values.unshift(value);
+            }
+            else {
+                values.push(value);
+            }
+        }
+        else {
+            const singular = value.start.equals(value.end);
+            
+            const start = this._find(value.start);
+            
+            if (!start.range) {
+                start.range = value;
+                values.splice(start.index, 0, value);
+                
+                if (singular) {
+                    return;
+                }
+            }
+            else {
+                while (start.index > 0 && values[start.index - 1].relatedTo(value.start)) {
+                    start.index--;
+                }
+                
+                start.range = values[start.index];
+            }
+            
+            const end = singular ? { ...start } : this._find(value.end);
+            
+            if (end.range) {
+                while (end.index < (values.length - 1) && 
+                       values[end.index + 1].relatedTo(value.end)) {
+                    end.index++;
+                }
+                
+                end.range = values[end.index];
+            }
+            
+            if (start.index === end.index) {
+                start.range.absorb(value);
+            }
+            else {
+                const ranges = values.splice(start.index, end.index - start.index + 1);
+                ranges.forEach(range => value.absorb(range));
+                values.splice(start.index, 0, value);
+            }
+        }
+    }
+    
+    _remove(value) {
+        const values = this._values;
+        const singular = value.start.equals(value.end);
+        
+        if (values.length === 0) {
+            return;
+        }
+        else if (values.length === 1) {
+            const existing = values[0];
+            
+            if (existing.contains(value)) {
+                const remaining = existing.remove(value);
+                values.splice(0, 1, ...remaining);
+            }
+        }
+        else {
+            if (singular) {
+                const found = this._find(value, 'contains');
+                
+                if (found && found.range) {
+                    const remaining = found.range.remove(value);
+                    values.splice(found.index, 1, ...remaining);
+                }
+            }
+            else {
+                const start = this._find(value.start, 'contains');
+
+                if (start.range) {
+                    const remaining = start.range.remove(value);
+                    values.splice(start.index, 1, ...remaining);
+                }
+                
+                const end = this._find(value.end, 'contains');
+                
+                if (end.range) {
+                    const remaining = end.range.remove(value);
+                    values.splice(end.index, 1, ...remaining);
+                    end.index += remaining.length - 1;
+                }
+                
+                values.splice(start.index, end.index - start.index + 1);
+            }
+        }
+    }
+    
+    _recount() {
+        this._size = this._values.reduce((acc, range) => (acc + range.size), 0);
     }
     
     get size() {
@@ -215,9 +280,9 @@ class RangeSet {
         const missing = new Set();
         
         for (let value of validated) {
-            const related = this._find(value, true);
+            const found = this._find(value, 'contains');
             
-            if (!(related instanceof BaseRange)) {
+            if (!found || !found.range) {
                 if (wantList) {
                     missing.add(value.valueOf());
                 }
@@ -269,7 +334,7 @@ class RangeSet {
             const match = rangeRe.exec(value);
             
             if (match) {
-                const { from, to } = match.groups || {};
+                const { from, to } = (match.groups || {});
                 
                 validated.push(new this.Range(from, to));
             }

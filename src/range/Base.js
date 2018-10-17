@@ -118,37 +118,42 @@ class Range {
             other = this.wrap(other);
         }
         
-        // The other range is outside of this one:
-        //              [ x, y ]          <- this
-        //     [ n, m ]                   <- other, or
-        //                       [ m, n ] <- other
-        if (other.end.isLesserThan(this.start) || other.start.isGreaterThan(this.end)) {
-            // No change
-            return [this];
-        }
+        const myStartGteOtherStart =
+            this.start.equals(other.start) || this.start.isGreaterThan(other.start);
         
-        // The other range is equal to this one:
+        const myEndLteOtherEnd =
+            this.end.equals(other.end) || this.end.isLesserThan(other.end);
+        
+        // The other range is equal to this one, or is a superset of this:
         //              [ x, y ]          <- this
-        //              [ x, y ]          <- other
-        else if (this.start.equals(other.start) && this.end.equals(other.end)) {
+        //              [ x, y ]          <- other, or
+        //          [ x - n, y + m ]      <- other
+        if (myStartGteOtherStart && myEndLteOtherEnd) {
             // All values are removed
             return [];
         }
         
-        // The other range is completely including this one:
+        // The other range is outside of this one:
         //              [ x, y ]          <- this
-        //          [ x - n, y + m ]      <- other
-        else if (other.start.isLesserThan(this.start) && other.end.isGreaterThan(this.end)) {
-            // Ditto
-            return [];
+        //     [ n, m ]                   <- other, or
+        //                       [ m, n ] <- other
+        else if (other.end.isLesserThan(this.start) || other.start.isGreaterThan(this.end)) {
+            // No change
+            return [this];
         }
         
         // The other range overlaps with this one on the start side:
         //                  [ x, y ]      <- this
         //       [ x - n, y - m ]         <- other
-        else if (other.start.isLesserThan(this.start) && other.end.isLesserThan(this.end)) {
-            // Other end is the new start
-            this.start = other.end.clone();
+        else if (myStartGteOtherStart && other.end.isLesserThan(this.end)) {
+            // Other end + 1 is the new start
+            const newStart = this.wrap(other.end.next());
+            
+            if (newStart.isGreaterThan(this.end)) {
+                return [];
+            }
+            
+            this.start = newStart;
             
             return [this];
         }
@@ -156,9 +161,15 @@ class Range {
         // The other range overlaps with this one on the end side:
         //           [ x, y ]             <- this
         //              [ x + n, y + m ]  <- other
-        else if (other.start.isGreaterThan(this.start) && other.end.isGreaterThan(this.end)) {
-            // Other start is the new end
-            this.end = other.start.clone();
+        else if (other.start.isGreaterThan(this.start) && myEndLteOtherEnd) {
+            // Other start - 1 is the new end
+            const newEnd = this.wrap(other.start.prev());
+            
+            if (newEnd.isLesserThan(this.start)) {
+                return [];
+            }
+            
+            this.end = newEnd;
             
             return [this];
         }

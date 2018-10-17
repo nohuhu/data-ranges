@@ -70,6 +70,7 @@ const makeSuite = (type, def, ctor) => {
                 
                 describe(`containsAll(), input: ${desc(input)}`, function() {
                     it(`should return ${desc(want)}`, function() {
+                        debugger;
                         const have = object.containsAll(input);
                         
                         expect(have).to.eql(want);
