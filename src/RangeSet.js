@@ -60,7 +60,7 @@ class RangeSet {
               firstValue = values[0],
               lastValue = values[lastIndex];
         
-        method = method || 'relatedTo';
+        method = method || 'adjacent';
         
         // Optimize trivial cases
         if (values.length === 0) {
@@ -148,7 +148,7 @@ class RangeSet {
         else if (values.length === 1) {
             const existing = values[0];
             
-            if (existing.relatedTo(value)) {
+            if (existing.adjacent(value)) {
                 existing.absorb(value);
             }
             else if (value.end.isLesserThan(existing.start)) {
@@ -172,7 +172,7 @@ class RangeSet {
                 }
             }
             else {
-                while (start.index > 0 && values[start.index - 1].relatedTo(value.start)) {
+                while (start.index > 0 && values[start.index - 1].adjacent(value.start)) {
                     start.index--;
                 }
                 
@@ -183,7 +183,7 @@ class RangeSet {
             
             if (end.range) {
                 while (end.index < (values.length - 1) && 
-                       values[end.index + 1].relatedTo(value.end)) {
+                       values[end.index + 1].adjacent(value.end)) {
                     end.index++;
                 }
                 
@@ -271,7 +271,7 @@ class RangeSet {
     }
     
     expand(item) {
-        throw new Error("expand() should be implemented in a subclass.");
+        throw new Error("expand() should be implemented in a child class.");
     }
     
     _has(values, wantList) {
@@ -309,6 +309,12 @@ class RangeSet {
         
         while (values.length) {
             const value = values.shift();
+            
+            if (value instanceof this.constructor) {
+                validated.push(...value._values);
+                
+                continue;
+            }
             
             if (value instanceof BaseRange) {
                 if (value instanceof this.Range) {

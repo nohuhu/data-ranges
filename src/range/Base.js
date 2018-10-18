@@ -14,6 +14,12 @@ class Range {
             end = start;
         }
         
+        if (options) {
+            for (let option in options) {
+                this[option] = options[option];
+            }
+        }
+        
         start = this.wrap(start);
         end = this.wrap(end);
         
@@ -25,24 +31,18 @@ class Range {
             this.start = start;
             this.end = end;
         }
-        
-        if (options) {
-            for (let option in options) {
-                this[option] = options[option];
-            }
-        }
     }
     
     static get patternRe() {
-        throw new Exception("patternRe getter should be implemented in a subclass.");
+        throw new Exception("patternRe getter should be implemented in a child class.");
     }
     
     static get rangeRe() {
-        throw new Exception("rangeRe getter should be implemented in a subclass.");
+        throw new Exception("rangeRe getter should be implemented in a child class.");
     }
     
     get size() {
-        throw new Error("size getter should be implemented in a subclass.");
+        throw new Error("size getter should be implemented in a child class.");
     }
     
     wrap(value) {
@@ -53,21 +53,8 @@ class Range {
         return new this.constructor(this.start.valueOf(), this.end.valueOf());
     }
     
-    relatedTo(other) {
-        if (other == null) {
-            return false;
-        }
-        
-        if (other instanceof Range) {
-            return this.relatedTo(other.start) || this.relatedTo(other.end);
-        }
-        
-        if (!(other instanceof Box)) {
-            other = this.wrap(other);
-        }
-        
-        return this.contains(other) ||
-               this.start.equals(other.next()) || this.end.equals(other.prev());
+    equals(other) {
+        return this.start.equals(other.start) && this.end.equals(other.end);
     }
     
     contains(other) {
@@ -76,11 +63,49 @@ class Range {
         }
         
         if (other instanceof Range) {
-            return this.contains(other.start) && this.contains(other.end);
+            return this.start.isLTE(other.start) && this.end.isGTE(other.end);
         }
         
-        return this.start.equals(other) || this.end.equals(other) ||
-               (this.start.isLesserThan(other) && this.end.isGreaterThan(other));
+        return this.start.isLTE(other) && this.end.isGTE(other);
+    }
+    
+    overlaps(other) {
+        if (other == null) {
+            return false;
+        }
+        
+        if (other instanceof Box) {
+            return this.contains(other);
+        }
+        
+        const myStart = this.start,
+              theirStart = other.start,
+              myEnd = this.end,
+              theirEnd = other.end;
+        
+        return this.contains(other) ||
+               other.contains(this) ||
+               (myStart.isLTE(theirStart) && myEnd.isGTE(theirStart)) ||
+               (myStart.isGTE(theirStart) && myStart.isLTE(theirEnd) && myEnd.isGTE(theirEnd));
+    }
+    
+    adjacent(other) {
+        if (other == null) {
+            return false;
+        }
+        
+        if (other instanceof Range) {
+            return this.contains(other) || other.contains(this) ||
+                   this.start.equals(other.end.next()) ||
+                   this.end.equals(other.start.prev());
+        }
+        
+        if (!(other instanceof Box)) {
+            other = this.wrap(other);
+        }
+        
+        return this.contains(other) ||
+               this.start.equals(other.next()) || this.end.equals(other.prev());
     }
     
     absorb(other) {
@@ -216,11 +241,7 @@ class Range {
     }
     
     sortFn() {
-        throw new Error("sortFn() should be implemented in a subclass.");
-    }
-    
-    equals(a, b) {
-        throw new Error("equals() should be implemented in a subclass.");
+        throw new Error("sortFn() should be implemented in a child class.");
     }
 }
 

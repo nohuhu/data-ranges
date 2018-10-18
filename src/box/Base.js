@@ -16,15 +16,19 @@ class Box {
     }
     
     toString() {
-        return this.value && this.value.toString ? this.value.toString() : this.value + '';
+        const value = this.value;
+        
+        return value && value.toString ? value.toString() : value + '';
     }
     
     equals(other) {
+        const value = this.value;
+        
         if (typeof other === 'object' && ('start' in other) && ('end' in other)) {
-            return other.start.equals(this.value) && other.end.equals(this.value);
+            return other.start.equals(value) && other.end.equals(value);
         }
         
-        return this.value === (other instanceof Box ? other.value : other);
+        return value === (other instanceof Box ? other.value : other);
     }
     
     isGreaterThan(other) {
@@ -35,6 +39,17 @@ class Box {
         return this.value > (other instanceof Box ? other.value : other);
     }
     
+    isGTE(other) {
+        const value = this.value;
+        
+        if (typeof other === 'object' && ('start' in other) && ('end' in other)) {
+            return other.end.isLesserThan(value) ||
+                   (other.start.equals(value) && other.end.equals(value));
+        }
+        
+        return value >= (other instanceof Box ? other.value : other);
+    }
+    
     isLesserThan(other) {
         if (typeof other === 'object' && ('start' in other) && ('end' in other)) {
             return other.start.isGreaterThan(this.value);
@@ -43,12 +58,23 @@ class Box {
         return this.value < (other instanceof Box ? other.value : other)
     }
     
+    isLTE(other) {
+        const value = this.value;
+        
+        if (typeof other === 'object' && ('start' in other) && ('end' in other)) {
+            return other.start.isGreaterThan(value) ||
+                   (other.start.equals(value) && other.end.equals(value));
+        }
+        
+        return value <= (other instanceof Box ? other.value : other)
+    }
+    
     next() {
-        throw new Error("next() should be implemented in a Box superclass");
+        throw new Error("next() should be implemented in a child class");
     }
     
     prev() {
-        throw new Error("prev() should be implemented in a Box superclass");
+        throw new Error("prev() should be implemented in a child class");
     }
 }
 

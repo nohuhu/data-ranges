@@ -150,7 +150,23 @@ makeTests('Integer', [{
     stringify: '-5..5',
     by: toArray('-5 -4 -3 -2 -1 0 1 2 3 4 5'),
 }, {
-    name: 'add() on the left',
+    name: 'add() outside on the left',
+    input: '-5..5',
+    method: 'add',
+    methodInput: '-8..-7',
+    size: 13,
+    stringify: '-8..-7,-5..5',
+    by: toArray('-8 -7 -5 -4 -3 -2 -1 0 1 2 3 4 5'),
+}, {
+    name: 'add() outside on the right',
+    input: '-5..5',
+    method: 'add',
+    methodInput: '8..7',
+    size: 13,
+    stringify: '-5..5,7..8',
+    by: toArray('-5 -4 -3 -2 -1 0 1 2 3 4 5 7 8'),
+}, {
+    name: 'add() adjacent on the left',
     input: '-5..-4,0..2',
     method: 'add',
     methodInput: '-1..1',
@@ -158,7 +174,7 @@ makeTests('Integer', [{
     stringify: '-5..-4,-1..2',
     by: toArray('-5 -4 -1 0 1 2'),
 }, {
-    name: 'add() on the right',
+    name: 'add() adjacent on the right',
     input: '-5..-4,0..2',
     method: 'add',
     methodInput: '1..3',
@@ -208,27 +224,39 @@ makeTests('Integer', [{
 }, {
     name: 'multiple add() calls',
     input: [],
-    method: (object) => {
-        object.add(toArray('-3 0 2 5'));
+    method: (range) => {
+        range.add(toArray('-3 0 2 5'));
         
-        expect(object + '').to.be('-3,0,2,5');
-        expect(object.size).to.be(4);
+        expect(range + '').to.be('-3,0,2,5');
+        expect(range.size).to.be(4);
         
-        object.add(toArray('-5 4 -1'));
+        range.add(toArray('-5 4 -1'));
         
-        expect(object + '').to.be('-5,-3,-1..0,2,4..5');
-        expect(object.size).to.be(7);
+        expect(range + '').to.be('-5,-3,-1..0,2,4..5');
+        expect(range.size).to.be(7);
         
-        object.add(toArray('-2 3 -4'));
+        range.add(toArray('-2 3 -4'));
         
-        expect(object + '').to.be('-5..0,2..5');
-        expect(object.size).to.be(10);
+        expect(range + '').to.be('-5..0,2..5');
+        expect(range.size).to.be(10);
         
-        object.add(1);
+        range.add(1);
     },
     methodInput: [],
     size: 11,
     stringify: '-5..5',
+}, {
+    name: 'add() a RangeSet',
+    input: '-5..5',
+    method: (range1, input) => {
+        const range2 = new range1.constructor(range1.Range, input);
+        
+        range1.add(range2);
+    },
+    methodInput: '-10..10',
+    size: 21,
+    stringify: '-10..10',
+    by: toArray('-10 -9 -8 -7 -6 -5 -4 -3 -2 -1 0 1 2 3 4 5 6 7 8 9 10'),
 }, {
     name: 'remove()',
     input: ['-5..5'],
@@ -239,26 +267,26 @@ makeTests('Integer', [{
 }, {
     name: 'multiple remove() calls',
     input: '-5..5',
-    method: (object) => {
-        object.remove(1);
+    method: (range) => {
+        range.remove(1);
         
-        expect(object + '').to.be('-5..0,2..5');
-        expect(object.size).to.be(10);
+        expect(range + '').to.be('-5..0,2..5');
+        expect(range.size).to.be(10);
         
-        object.remove(toArray('-2 3 -4'));
+        range.remove(toArray('-2 3 -4'));
         
-        expect(object + '').to.be('-5,-3,-1..0,2,4..5');
-        expect(object.size).to.be(7);
+        expect(rnage + '').to.be('-5,-3,-1..0,2,4..5');
+        expect(range.size).to.be(7);
         
-        object.remove(toArray('-5 4 -1'));
+        range.remove(toArray('-5 4 -1'));
         
-        expect(object + '').to.be('-3,0,2,5');
-        expect(object.size).to.be(4);
+        expect(range + '').to.be('-3,0,2,5');
+        expect(range.size).to.be(4);
         
-        object.remove(toArray('-3 0 2 5'));
+        range.remove(toArray('-3 0 2 5'));
         
-        expect(object + '').to.be('');
-        expect(object.size).to.be(0);
+        expect(range + '').to.be('');
+        expect(range.size).to.be(0);
     },
     methodInput: [],
 
