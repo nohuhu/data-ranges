@@ -170,28 +170,30 @@ describe("base Range", function() {
                 });
             });
             
-            it("should return false when non-collapsed A and B are disjointed", function() {
-                A = new Range(1, 3);
-                B = new Range(5, 8);
+            describe("false", function() {
+                it("should return false when non-collapsed A and B are disjointed", function() {
+                    A = new Range(1, 3);
+                    B = new Range(5, 8);
+                    
+                    expect(A.contains(B)).to.be(false);
+                    expect(B.contains(A)).to.be(false);
+                });
                 
-                expect(A.contains(B)).to.be(false);
-                expect(B.contains(A)).to.be(false);
-            });
-            
-            it("should return false for disjointed collapsed A and B", function() {
-                A = new Range(1);
-                B = new Range(5);
+                it("should return false for disjointed collapsed A and B", function() {
+                    A = new Range(1);
+                    B = new Range(5);
+                    
+                    expect(A.contains(B)).to.be(false);
+                    expect(B.contains(A)).to.be(false);
+                });
                 
-                expect(A.contains(B)).to.be(false);
-                expect(B.contains(A)).to.be(false);
-            });
-            
-            it("should return false for overlapping non-collapsed A and B", function() {
-                A = new Range(1, 5);
-                B = new Range(3, 8);
-                
-                expect(A.contains(B)).to.be(false);
-                expect(B.contains(A)).to.be(false);
+                it("should return false for overlapping non-collapsed A and B", function() {
+                    A = new Range(1, 5);
+                    B = new Range(3, 8);
+                    
+                    expect(A.contains(B)).to.be(false);
+                    expect(B.contains(A)).to.be(false);
+                });
             });
         });
         
@@ -201,14 +203,6 @@ describe("base Range", function() {
                     it("A == B", function() {
                         A = new Range(1, 5);
                         B = new Range(1, 5);
-                        
-                        expect(A.overlaps(B)).to.be(true);
-                        expect(B.overlaps(A)).to.be(true);
-                    });
-                    
-                    it("A contains B", function() {
-                        A = new Range(1, 10);
-                        B = new Range(3, 8);
                         
                         expect(A.overlaps(B)).to.be(true);
                         expect(B.overlaps(A)).to.be(true);
@@ -258,14 +252,6 @@ describe("base Range", function() {
                     
                     it("B == A.end", function() {
                         A = new Range(1, 5);
-                        B = new Range(5);
-                        
-                        expect(A.overlaps(B)).to.be(true);
-                        expect(B.overlaps(A)).to.be(true);
-                    });
-                    
-                    it("B within A", function() {
-                        A = new Range(1, 10);
                         B = new Range(5);
                         
                         expect(A.overlaps(B)).to.be(true);
@@ -355,7 +341,7 @@ describe("base Range", function() {
                 
                 it("A is a range, B is a box", function() {
                     A = new R(5, 10);
-                    B = new A.Box(6);
+                    B = new A.Box(4);
                     
                     expect(A.adjacent(B)).to.be(true);
                 });

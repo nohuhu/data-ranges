@@ -11,11 +11,11 @@ const desc = (want) => {
     return want === '' ? "empty string" : want + '';
 }
 
-const makeSuite = (type, def, ctor) => {
+const makeSuite = (def, ctor) => {
     const { name, input, exception, method } = def;
     
     if (!name) {
-        throw new Exception("Test name is required!");
+        throw new Error("Test name is required!");
     }
     
     describe(name, function() {
@@ -69,11 +69,18 @@ const makeSuite = (type, def, ctor) => {
                 const { input, want } = check;
                 
                 describe(`containsAll(), input: ${desc(input)}`, function() {
-                    it(`should return ${desc(want)}`, function() {
-                        debugger;
-                        const have = object.containsAll(input);
-                        
-                        expect(have).to.eql(want);
+                    let have;
+                    
+                    before(function() {
+                        have = object.containsAll(input);
+                    });
+                    
+                    it("should return a RangeSet", function() {
+                        expect(have instanceof RangeSet).to.be(true);
+                    });
+                    
+                    it(`return value should be ${desc(want)}`, function() {
+                        expect(have.toString()).to.eql(want);
                     });
                 });
             });
@@ -193,11 +200,11 @@ const makeSuite = (type, def, ctor) => {
             }
         }
         
+        testSize(def.size);
+        testToString(def.stringify);
         testContains(def.contains);
         testContainsAll(def.containsAll);
         testBy(def.by);
-        testToString(def.stringify);
-        testSize(def.size);
     });
 };
 
@@ -222,7 +229,7 @@ const makeTests = (type, tests) => {
         });
         
         describe("functional tests", function() {
-            tests.forEach(test => makeSuite(test.type, test, Range));
+            tests.forEach(test => makeSuite(test, type));
         });
     });
 };

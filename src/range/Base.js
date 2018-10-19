@@ -83,9 +83,7 @@ class Range {
               myEnd = this.end,
               theirEnd = other.end;
         
-        return this.contains(other) ||
-               other.contains(this) ||
-               (myStart.isLTE(theirStart) && myEnd.isGTE(theirStart)) ||
+        return (myStart.isLTE(theirStart) && myEnd.isGTE(theirStart)) ||
                (myStart.isGTE(theirStart) && myStart.isLTE(theirEnd) && myEnd.isGTE(theirEnd));
     }
     
@@ -95,17 +93,32 @@ class Range {
         }
         
         if (other instanceof Range) {
-            return this.contains(other) || other.contains(this) ||
-                   this.start.equals(other.end.next()) ||
-                   this.end.equals(other.start.prev());
+            return this.start.equals(other.end.next()) || this.end.equals(other.start.prev());
         }
         
         if (!(other instanceof Box)) {
             other = this.wrap(other);
         }
         
-        return this.contains(other) ||
-               this.start.equals(other.next()) || this.end.equals(other.prev());
+        return this.start.equals(other.next()) || this.end.equals(other.prev());
+    }
+    
+    meets(other) {
+        if (other == null) {
+            return false;
+        }
+        
+        return this.equals(other) || this.contains(other) || 
+               (other.contains && other.contains(this)) ||
+               this.overlaps(other);
+    }
+    
+    relatedTo(other) {
+        if (other == null) {
+            return false;
+        }
+        
+        return this.meets(other) || this.adjacent(other);
     }
     
     absorb(other) {
