@@ -19,7 +19,7 @@ class RangeSet {
         delete options.type;
         
         if (typeof type === 'string') {
-            type = require(path.join(__dirname, 'range', ucfirst(type.toLowerCase())));
+            type = require(path.join(__dirname, 'range', ucfirst(type)));
         }
         
         if (typeof type !== 'function') {
