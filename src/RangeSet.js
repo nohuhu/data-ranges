@@ -2,11 +2,11 @@ const path = require('path');
 const BaseRange = require('./range/Base');
 
 const ucfirst = (str) => {
-    const chars = (str || '').toLowerCase().split('');
+    if (!str) {
+        return str;
+    }
     
-    chars[0] = (chars[0] || '').toUpperCase();
-    
-    return chars.join('');
+    return str.substr(0, 1).toUpperCase() + str.substr(1).toLowerCase();
 }
 
 class RangeSet {
