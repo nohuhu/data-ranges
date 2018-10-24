@@ -2,7 +2,7 @@ const path = require('path');
 const BaseRange = require('./range/Base');
 
 const ucfirst = (str) => {
-    if (!str) {
+    if (!str || typeof str !== 'string') {
         return str;
     }
     
