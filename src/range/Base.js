@@ -1,24 +1,30 @@
 const Box = require('../box/Base');
 
 class Range {
-    constructor(start, end, options) {
+    constructor(options) {
+        if (options == null || typeof options !== 'object') {
+            throw new Error("Invalid Range constructor arguments");
+        }
+        
+        const haveEnd = 'end' in options;
+        
+        let { start, end } = options;
+        delete options.start;
+        delete options.end;
+        
         if (start == null) {
             throw new Error(`Invalid start value: ${start}`);
         }
         
-        if (arguments.length > 1 && end == null) {
+        if (haveEnd && end == null) {
             throw new Error(`Invalid end value: ${end}`);
         }
         
-        if (arguments.length === 1) {
+        if (!haveEnd) {
             end = start;
         }
         
-        if (options) {
-            for (let option in options) {
-                this[option] = options[option];
-            }
-        }
+        this.options = { ...options };
         
         start = this.wrap(start);
         end = this.wrap(end);
@@ -50,7 +56,11 @@ class Range {
     }
     
     clone() {
-        return new this.constructor(this.start.valueOf(), this.end.valueOf());
+        return new this.constructor({
+            start: this.start.valueOf(),
+            end: this.end.valueOf(),
+            ...this.options,
+        });
     }
     
     equals(other) {
@@ -216,8 +226,17 @@ class Range {
         //         [   x,     y       ]   <- this
         //           [ x + n, y - m ]     <- other
         else {
-            const range1 = new this.constructor(this.start.valueOf(), other.start.prev());
-            const range2 = new this.constructor(other.end.next(), this.end.valueOf());
+            const range1 = new this.constructor({
+                start: this.start.valueOf(),
+                end: other.start.prev(),
+                ...this.options,
+            });
+            
+            const range2 = new this.constructor({
+                start: other.end.next(),
+                end: this.end.valueOf(),
+                ...this.options,
+            });
             
             return [range1, range2];
         }

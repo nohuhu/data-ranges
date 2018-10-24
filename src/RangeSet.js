@@ -12,20 +12,32 @@ const ucfirst = (str) => {
 const _separatorRe = /\s*[,;]\s*/;
 
 class RangeSet {
-    constructor(Range, values) {
-        if (typeof Range === 'string') {
-            Range = require(path.join(__dirname, 'range', ucfirst(Range.toLowerCase())));
+    constructor(options) {
+        if (!options || typeof options !== 'object') {
+            throw new Error("RangeSet options are required.");
         }
         
-        if (typeof Range !== 'function') {
-            throw new Error("Range constructor is required as first argument");
+        let type = options.type;
+        delete options.type;
+        
+        if (typeof type === 'string') {
+            type = require(path.join(__dirname, 'range', ucfirst(type.toLowerCase())));
         }
         
-        this.Range = Range;
+        if (typeof type !== 'function') {
+            throw new Error("Range type or constructor is required");
+        }
+        
+        const haveValues = 'values' in options;
+        const values = options.values;
+        delete options.values;
+        
+        this.Range = type;
         this._values = [];
         this._size = 0;
+        this._options = { ...options };
         
-        if (arguments.length > 1) {
+        if (haveValues) {
             this.add(values);
         }
     }
@@ -288,7 +300,7 @@ class RangeSet {
     }
     
     containsAll(values) {
-        return new this.constructor(this.Range, values)._subtract(this._values);
+        return new this.constructor({ type: this.Range, values })._subtract(this._values);
     }
     
     get itemSeparator() {
@@ -299,10 +311,6 @@ class RangeSet {
         return _separatorRe;
     }
     
-    expand(item) {
-        throw new Error("expand() should be implemented in a child class.");
-    }
-    
     validate(values) {
         values = (values instanceof Set) || Array.isArray(values) ? [...values] : [values];
         
@@ -310,6 +318,7 @@ class RangeSet {
             return values;
         }
         
+        const options = this._options;
         const separatorRe = this.itemSeparatorRe;
         const rangeRe = this.Range.rangeRe;
         
@@ -350,10 +359,10 @@ class RangeSet {
             if (match) {
                 const { from, to } = (match.groups || {});
                 
-                validated.push(new this.Range(from, to));
+                validated.push(new this.Range({ start: from, end: to, options }));
             }
             else {
-                validated.push(new this.Range(value));
+                validated.push(new this.Range({ start: value, options }));
             }
         }
         

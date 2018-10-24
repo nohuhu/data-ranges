@@ -136,10 +136,10 @@ const makeSuite = (def, ctor) => {
         describe("construction", function() {
             const ctorFn = function() {
                 if ('input' in def) {
-                    object = new RangeSet(ctor, input);
+                    object = new RangeSet({ type: ctor, values: input });
                 }
                 else {
-                    object = new RangeSet(ctor);
+                    object = new RangeSet({ type: ctor });
                 }
             };
             

@@ -278,7 +278,7 @@ makeTests('Integer', [{
     name: 'add a RangeSet',
     input: '-5..5',
     method: (range1, input) => {
-        const range2 = new range1.constructor(range1.Range, input);
+        const range2 = new range1.constructor({ type: range1.Range, values: input });
         
         range1.add(range2);
     },
@@ -455,7 +455,6 @@ makeTests('Integer', [{
     name: 'complex operations',
     input: ['0, 1, 2, 5; 7..10, 15..20', 30, '50..40', '-42..-45'],
     method: (object) => {
-        debugger;
         object.add(['101;105..107', 110, '115..118', '-46..-42', '19..16']);
         object.remove('10..100');
     },
