@@ -135,12 +135,18 @@ const makeSuite = (def, ctor) => {
         
         describe("construction", function() {
             const ctorFn = function() {
+                let args = { type: ctor };
+                
                 if ('input' in def) {
-                    object = new RangeSet({ type: ctor, values: input });
+                    if (typeof input === 'object' && !Array.isArray(input)) {
+                        args = { ...args, ...input };
+                    }
+                    else {
+                        args.values = input;
+                    }
                 }
-                else {
-                    object = new RangeSet({ type: ctor });
-                }
+                
+                object = new RangeSet(args);
             };
             
             if (exception) {

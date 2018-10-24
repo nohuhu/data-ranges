@@ -7,7 +7,7 @@ makeTests('Integer', [{
     exception: /Invalid input/,
 }, {
     name: 'Invalid input: null',
-    input: null,
+    input: { values: null },
     exception: /Invalid input/,
 }, {
     name: 'Invalid input: undefined',
@@ -27,11 +27,11 @@ makeTests('Integer', [{
     exception: /Invalid input/,
 }, {
     name: 'Invalid input: {}',
-    input: {},
+    input: { values: {} },
     exception: /Invalid input/,
 }, {
     name: 'Invalid input: [{}]',
-    input: [{}],
+    input: { values: [{}] },
     exception: /Invalid input/,
 }, {
     name: 'Invalid input: NaN',

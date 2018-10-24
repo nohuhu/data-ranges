@@ -1,30 +1,58 @@
 const Box = require('../box/Base');
 
 class Range {
+    static factory(params) {
+        if (params == null || typeof params !== 'object') {
+            throw new Error("Invalid Range factory() arguments");
+        }
+        
+        let { values, options } = params;
+        options = options || {};
+        
+        if (typeof values === 'string') {
+            const separatorRe = options.separatorRe || this._separatorRe;
+            
+            return values.split(separatorRe).map(v => new this({ start: v, ...options }));
+        }
+        else {
+            return [new this({ start: values, ...options })];
+        }
+    }
+    
     constructor(options) {
         if (options == null || typeof options !== 'object') {
             throw new Error("Invalid Range constructor arguments");
         }
         
-        const haveEnd = 'end' in options;
+        this.options = { ...options };
+        delete this.options.start;
+        delete this.options.end;
         
         let { start, end } = options;
-        delete options.start;
-        delete options.end;
         
-        if (start == null) {
-            throw new Error(`Invalid start value: ${start}`);
+        if (start == null || (typeof start === 'string' && !this.patternRe.test(start))) {
+            throw new Error(`Invalid input: ${start}`);
         }
         
-        if (haveEnd && end == null) {
-            throw new Error(`Invalid end value: ${end}`);
+        let match;
+        
+        if ('end' in options) {
+            if (end == null || (typeof end === 'string' && !this.patternRe(end))) {
+                throw new Error(`Invalid input: ${end}`);
+            }
+        }
+        else if (typeof start === 'string' && (match = this.rangeRe.exec(start))) {
+            if (!match.groups || !match.groups.start || !match.groups.end) {
+                throw new Error(`Invalid input: ${start}`);
+            }
+            
+            start = match.groups.start;
+            end = match.groups.end;
         }
         
-        if (!haveEnd) {
+        if (end == null) {
             end = start;
         }
-        
-        this.options = { ...options };
         
         start = this.wrap(start);
         end = this.wrap(end);
@@ -39,20 +67,32 @@ class Range {
         }
     }
     
-    static get patternRe() {
-        throw new Exception("patternRe getter should be implemented in a child class.");
+    get separator() {
+        return this.options.separator || this._separator;
     }
     
-    static get rangeRe() {
-        throw new Exception("rangeRe getter should be implemented in a child class.");
+    get patternRe() {
+        return this.options.patternRe || this._patternRe;
+    }
+    
+    get rangeRe() {
+        return this.options.rangeRe || this._rangeRe;
+    }
+    
+    get delimiter() {
+        return this.options.delimiter || this._delimiter;
     }
     
     get size() {
         throw new Error("size getter should be implemented in a child class.");
     }
     
+    parseValue(value) {
+        return value;
+    }
+    
     wrap(value) {
-        return new this.Box(value);
+        return new this.Box(this.parseValue(value));
     }
     
     clone() {
@@ -278,5 +318,7 @@ class Range {
 }
 
 Range.prototype.Box = Box;
+Range.prototype._separator = ',';
+Range._separatorRe = /\s*[,;]\s*/;
 
 module.exports = Range;

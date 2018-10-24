@@ -1,31 +1,19 @@
 const IntegerRange = require('./Integer');
 
-const _patternRe = /^\d+(?:(?:\.\.|-)\d+)?$/;
-const _rangeRe = /^(?<from>\d+)(?:\.\.|-)(?<to>\d+)$/;
-const _rangeSeparator = '-';
-
 class SerialRange extends IntegerRange {
-    get patternRe() {
-        return _patternRe;
-    }
-    
-    get rangeRe() {
-        return _rangeRe;
-    }
-    
-    get rangeSeparator() {
-        return _rangeSeparator;
-    }
-    
-    convertItem(item) {
-        const converted = super.convertItem(item);
+    parseValue(raw) {
+        const value = parseInt(raw);
         
-        if (converted < 0) {
-            throw new Error(`Invalid item: ${item}`);
+        if (isNaN(value) || value < 0) {
+            throw new Error(`Invalid input: ${raw}`);
         }
         
-        return converted;
+        return value;
     }
 }
+
+SerialRange.prototype._patternRe = /^\d+(?:(?:\.\.|-)\d+)?$/;
+SerialRange.prototype._rangeRe = /^(?<start>\d+)(?:\.\.|-)(?<end>\d+)$/;
+SerialRange.prototype._delimiter = '-';
 
 module.exports = SerialRange;

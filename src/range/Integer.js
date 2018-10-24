@@ -1,31 +1,19 @@
 const IntegerBox = require('../box/Integer');
 const Range = require('./Base');
 
-const _patternRe = /^\s*[-+]?\d+\s*(?:\.\.\s*[-+]?\d+)?\s*$/;
-const _rangeRe = /^\s*(?<from>[-+]?\d+)\s*\.\.\s*(?<to>[-+]?\d+)\s*$/;
-const _delimiter = '..';
-
 class IntegerRange extends Range {
-    static get patternRe() {
-        return _patternRe;
-    }
-    
-    static get rangeRe() {
-        return _rangeRe;
-    }
-    
     get size() {
         return this.end.valueOf() - this.start.valueOf() + 1;
     }
     
-    wrap(value) {
-        const converted = parseInt(value);
+    parseValue(raw) {
+        const value = parseInt(raw);
         
-        if (isNaN(converted)) {
-            throw new Error(`Invalid value: ${value}`);
+        if (isNaN(value)) {
+            throw new Error(`Invalid input: ${raw}`);
         }
         
-        return super.wrap(converted);
+        return value;
     }
     
     expand(from, to) {
@@ -67,6 +55,8 @@ class IntegerRange extends Range {
 };
 
 IntegerRange.prototype.Box = IntegerBox;
-IntegerRange.prototype.delimiter = _delimiter;
+IntegerRange.prototype._patternRe = /^\s*[-+]?\d+\s*(?:\.\.\s*[-+]?\d+)?\s*$/;
+IntegerRange.prototype._rangeRe = /^\s*(?<start>[-+]?\d+)\s*\.\.\s*(?<end>[-+]?\d+)\s*$/;
+IntegerRange.prototype._delimiter = '..';
 
 module.exports = IntegerRange;

@@ -9,8 +9,6 @@ const ucfirst = (str) => {
     return chars.join('');
 }
 
-const _separatorRe = /\s*[,;]\s*/;
-
 class RangeSet {
     constructor(options) {
         if (!options || typeof options !== 'object') {
@@ -28,17 +26,15 @@ class RangeSet {
             throw new Error("Range type or constructor is required");
         }
         
-        const haveValues = 'values' in options;
-        const values = options.values;
-        delete options.values;
-        
         this.Range = type;
-        this._values = [];
-        this._size = 0;
-        this._options = { ...options };
+        this.values = [];
+        this.size = 0;
         
-        if (haveValues) {
-            this.add(values);
+        this.options = { ...options };
+        delete this.options.values;
+        
+        if ('values' in options) {
+            this.add(options.values);
         }
     }
     
@@ -79,7 +75,7 @@ class RangeSet {
     }
     
     _find(value, method) {
-        const values = this._values,
+        const values = this.values,
               lastIndex = values.length - 1,
               firstValue = values[0],
               lastValue = values[lastIndex];
@@ -164,7 +160,7 @@ class RangeSet {
     }
     
     _splice(value) {
-        const values = this._values;
+        const values = this.values;
         
         if (values.length === 0) {
             values.push(value);
@@ -226,7 +222,7 @@ class RangeSet {
     }
     
     _delete(value) {
-        const values = this._values;
+        const values = this.values;
         const singular = value.start.equals(value.end);
         
         if (values.length === 0) {
@@ -273,11 +269,7 @@ class RangeSet {
     }
     
     _recount() {
-        this._size = this._values.reduce((acc, range) => (acc + range.size), 0);
-    }
-    
-    get size() {
-        return this._size;
+        this.size = this.values.reduce((acc, range) => (acc + range.size), 0);
     }
     
     has(values) {
@@ -286,7 +278,7 @@ class RangeSet {
     
     contains(values) {
         const validated = this.validate(values);
-        const existing = this._values;
+        const existing = this.values;
         
         for (let value of validated) {
             const found = this._find(value, 'contains');
@@ -300,15 +292,9 @@ class RangeSet {
     }
     
     containsAll(values) {
-        return new this.constructor({ type: this.Range, values })._subtract(this._values);
-    }
-    
-    get itemSeparator() {
-        return ',';
-    }
-    
-    get itemSeparatorRe() {
-        return _separatorRe;
+        const other = new this.constructor({ type: this.Range, values, ...this.options });
+        
+        return other._subtract(this.values);
     }
     
     validate(values) {
@@ -318,9 +304,8 @@ class RangeSet {
             return values;
         }
         
-        const options = this._options;
-        const separatorRe = this.itemSeparatorRe;
-        const rangeRe = this.Range.rangeRe;
+        const options = this.options;
+        const separatorRe = this.separatorRe;
         
         const validated = [];
         
@@ -328,63 +313,39 @@ class RangeSet {
             const value = values.shift();
             
             if (value instanceof this.constructor) {
-                validated.push(...value._values);
-                
-                continue;
+                validated.push(...value.values);
             }
-            
-            if (value instanceof BaseRange) {
+            else if (value instanceof BaseRange) {
                 if (value instanceof this.Range) {
                     validated.push(value);
-                    
-                    continue;
                 }
                 else {
                     throw new Error("Cannot mix different Range types in the same set!");
                 }
             }
-            
-            if (separatorRe.test(value)) {
-                Array.prototype.splice.apply(values, [].concat(0, 0, value.split(separatorRe)));
-                
-                continue;
-            }
-            
-            if (!this.validateValue(value)) {
-                throw new Error(`Invalid input: ${value}`);
-            }
-            
-            const match = rangeRe.exec(value);
-            
-            if (match) {
-                const { from, to } = (match.groups || {});
-                
-                validated.push(new this.Range({ start: from, end: to, options }));
-            }
             else {
-                validated.push(new this.Range({ start: value, options }));
+                // This will throw if something is wrong
+                validated.push(...this.Range.factory({ values: value, options }));
             }
         }
         
         return validated;
     }
     
-    validateValue(value) {
-        if (value == null || value === '' || !this.Range.patternRe.test(value)) {
-            return false;
+    toString() {
+        if (!this.values.length) {
+            return '';
         }
         
-        return true;
-    }
-    
-    toString() {
-        const values = this._values.map(value => value.toString());
+        // TODO This is a bit kludgy :(
+        const separator = this.options.separator || this.values[0].separator;
+        const values = this.values.map(value => value.toString());
         
-        return values.join(this.itemSeparator);
+        return values.join(separator);
     }
     
     *by(precision, options) {
-        const values = [...this._values];
+        const values = [...this.values];
         
         while (values.length) {
             const value = values.shift();
