@@ -28,7 +28,11 @@ class Box {
             return other.start.equals(value) && other.end.equals(value);
         }
         
-        return value === (other instanceof Box ? other.value : other);
+        return this._equals(other);
+    }
+    
+    _equals(other) {
+        return this.value === (other instanceof Box ? other.value : other);
     }
     
     isGreaterThan(other) {
@@ -36,6 +40,10 @@ class Box {
             return other.end.isLesserThan(this.value);
         }
         
+        return this._isGT(other);
+    }
+    
+    _isGT(other) {
         return this.value > (other instanceof Box ? other.value : other);
     }
     
@@ -47,7 +55,11 @@ class Box {
                    (other.start.equals(value) && other.end.equals(value));
         }
         
-        return value >= (other instanceof Box ? other.value : other);
+        return this._isGTE(other);
+    }
+    
+    _isGTE(other) {
+        return this.value >= (other instanceof Box ? other.value : other);
     }
     
     isLesserThan(other) {
@@ -55,7 +67,11 @@ class Box {
             return other.start.isGreaterThan(this.value);
         }
         
-        return this.value < (other instanceof Box ? other.value : other)
+        return this._isLT(other);
+    }
+    
+    _isLT(other) {
+        return this.value < (other instanceof Box ? other.value : other);
     }
     
     isLTE(other) {
@@ -66,7 +82,11 @@ class Box {
                    (other.start.equals(value) && other.end.equals(value));
         }
         
-        return value <= (other instanceof Box ? other.value : other)
+        return this._isLTE(other);
+    }
+    
+    _isLTE(other) {
+        return this.value <= (other instanceof Box ? other.value : other);
     }
     
     next() {

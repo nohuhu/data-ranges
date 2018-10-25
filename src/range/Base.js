@@ -311,10 +311,6 @@ class Range {
         
         return this.start.toString() + this.delimiter + this.end.toString();
     }
-    
-    sortFn() {
-        throw new Error("sortFn() should be implemented in a child class.");
-    }
 }
 
 Range.prototype.Box = Box;
