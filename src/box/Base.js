@@ -22,6 +22,10 @@ class Box {
     }
     
     equals(other) {
+        if (other == null) {
+            return false;
+        }
+        
         const value = this.value;
         
         if (typeof other === 'object' && ('start' in other) && ('end' in other)) {
@@ -36,6 +40,10 @@ class Box {
     }
     
     isGreaterThan(other) {
+        if (other == null) {
+            return false;
+        }
+        
         if (typeof other === 'object' && ('start' in other) && ('end' in other)) {
             return other.end.isLesserThan(this.value);
         }
@@ -48,6 +56,10 @@ class Box {
     }
     
     isGTE(other) {
+        if (other == null) {
+            return false;
+        }
+        
         const value = this.value;
         
         if (typeof other === 'object' && ('start' in other) && ('end' in other)) {
@@ -63,6 +75,10 @@ class Box {
     }
     
     isLesserThan(other) {
+        if (other == null) {
+            return false;
+        }
+        
         if (typeof other === 'object' && ('start' in other) && ('end' in other)) {
             return other.start.isGreaterThan(this.value);
         }
@@ -75,6 +91,10 @@ class Box {
     }
     
     isLTE(other) {
+        if (other == null) {
+            return false;
+        }
+        
         const value = this.value;
         
         if (typeof other === 'object' && ('start' in other) && ('end' in other)) {

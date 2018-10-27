@@ -37,7 +37,7 @@ class Range {
         let match;
         
         if ('end' in options) {
-            if (end == null || (typeof end === 'string' && !this.patternRe(end))) {
+            if (end == null || (typeof end === 'string' && !this.patternRe.test(end))) {
                 throw new Error(`Invalid input: ${end}`);
             }
         }

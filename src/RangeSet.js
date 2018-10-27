@@ -105,12 +105,9 @@ class RangeSet {
         
         let startIndex = 0,
             finishIndex = values.length - 1,
-            midIndex, startValue, finishValue, midValue;
+            midIndex, midValue;
         
         while (startIndex !== finishIndex) {
-            startValue = values[startIndex];
-            finishValue = values[finishIndex];
-            
             midIndex = startIndex + Math.ceil((finishIndex - startIndex) / 2);
             midValue = values[midIndex];
             
@@ -151,7 +148,7 @@ class RangeSet {
                     return { index: nextIndex, range: nextValue };
                 }
                 else if (nextValue.start.isGreaterThan(value)) {
-                    return { index: midIndex };
+                    return { index: nextIndex };
                 }
                 
                 startIndex = midIndex;
@@ -208,6 +205,9 @@ class RangeSet {
                 }
                 
                 end.range = values[end.index];
+            }
+            else if (end.index === start.index + 1) {
+                end.index = start.index;
             }
             
             if (start.index === end.index) {
@@ -311,6 +311,7 @@ class RangeSet {
         
         while (values.length) {
             const value = values.shift();
+            const last = validated[validated.length - 1];
             
             if (value instanceof this.constructor) {
                 validated.push(...value.values);

@@ -4,13 +4,18 @@ class DigitStringBox extends Box {
     constructor(value) {
         super(value);
         
-        [this.prefix, this.numeric] = this._parse(value);
+        [this.length, this.prefix, this.numeric] = this._parse(value);
     }
     
-    _parse(value) {
+    _parse(value, unbox) {
         value = value instanceof Box ? value.valueOf() : value;
         
-        return /^[#*]/.test(value) ? [value.substr(0, 1), value.substr(1)] : [null, value];
+        const result =
+            /^[#*]/.test(value)
+                ? [value.length, value.substr(0, 1), parseInt(value.substr(1))]
+                : [value.length, '', parseInt(value)];
+        
+        return unbox ? [...result, value] : result;
     }
     
     toString() {
@@ -18,82 +23,123 @@ class DigitStringBox extends Box {
     }
     
     _isGT(other) {
-        let { prefix, numeric } = this;
-        let [ otherPrefix, otherNumeric ] = this._parse(other);
+        const { length, prefix, numeric } = this;
+        const [ otherLength, otherPrefix, otherNumeric ] = this._parse(other);
         
-        // *123 < #123 < 123
-        if (prefix === '*') {
-            return otherPrefix === '*' ? numeric > otherNumeric : false;
-        }
-        else if (prefix === '#') {
-            return !otherPrefix ? false : otherPrefix === '*' ? true : numeric > otherNumeric;
+        // *123 < #123 < 123 && *123 < *1234 < 123
+        if (prefix !== otherPrefix) {
+            return prefix && !otherPrefix ? false
+                 : !prefix && otherPrefix ? true
+                 : prefix === '*' && otherPrefix === '#' ? false
+                 : prefix === '#' && otherPrefix === '*' ? true
+                 :                                         new Error("Shouldn't happen!")
+                 ;
         }
         else {
-            return otherPrefix ? true : numeric > otherNumeric;
+            return otherLength > length ? false
+                 : otherLength < length ? true
+                 :                        numeric > otherNumeric
+                 ;
         }
     }
     
     _isGTE(other) {
-        let { prefix, numeric } = this;
-        let [ otherPrefix, otherNumeric ] = this._parse(other);
+        const { length, prefix, numeric } = this;
+        const [ otherLength, otherPrefix, otherNumeric, otherValue ] = this._parse(other, true);
         
-        if (prefix === '*') {
-            return otherPrefix === '*' ? numeric >= otherNumeric : false;
+        if (this.value === otherValue) {
+            return true;
         }
-        else if (prefix === '#') {
-            return !otherPrefix ? false : otherPrefix === '*' ? true : numeric >= otherNumeric;
+        else if (prefix !== otherPrefix) {
+            return prefix && !otherPrefix ? false
+                 : !prefix && otherPrefix ? true
+                 : prefix === '*' && otherPrefix === '#' ? false
+                 : prefix === '#' && otherPrefix === '*' ? true
+                 :                                         new Error("Shouldn't happen!")
+                 ;
         }
         else {
-            return otherPrefix ? true : numeric >= otherNumeric;
+            return otherLength > length ? false
+                 : otherLength < length ? true
+                 :                        numeric >= otherNumeric
+                 ;
         }
     }
     
     _isLT(other) {
-        let { prefix, numeric } = this;
-        let [ otherPrefix, otherNumeric ] = this._parse(other);
+        const { length, prefix, numeric } = this;
+        const [ otherLength, otherPrefix, otherNumeric ] = this._parse(other);
         
-        if (prefix === '*') {
-            return otherPrefix === '*' ? numeric < otherNumeric : true;
-        }
-        else if (prefix === '#') {
-            return !otherPrefix ? true : otherPrefix === '*' ? false : numeric < otherNumeric;
+        if (prefix !== otherPrefix) {
+            return !prefix && otherPrefix ? false
+                 : prefix && !otherPrefix ? true
+                 : prefix === '*' && otherPrefix === '#' ? true
+                 : prefix === '#' && otherPrefix === '*' ? false
+                 :                                         new Error("Shouldn't happen!")
+                 ;
         }
         else {
-            return otherPrefix ? false : numeric < otherNumeric;
+            return otherLength > length ? true
+                 : otherLength < length ? false
+                 :                        numeric < otherNumeric
+                 ;
         }
     }
     
     _isLTE(other) {
-        let { prefix, numeric } = this;
-        let [ otherPrefix, otherNumeric ] = this._parse(other);
+        const { length, prefix, numeric } = this;
+        const [ otherLength, otherPrefix, otherNumeric, otherValue ] = this._parse(other, true);
         
-        if (prefix === '*') {
-            return otherPrefix === '*' ? numeric <= otherNumeric : true;
+        if (this.value === otherValue) {
+            return true;
         }
-        else if (prefix === '#') {
-            return !otherPrefix ? true : otherPrefix === '*' ? false : numeric <= otherNumeric;
+        else if (prefix !== otherPrefix) {
+            return !prefix && otherPrefix ? false
+                 : prefix && !otherPrefix ? true
+                 : prefix === '*' && otherPrefix === '#' ? true
+                 : prefix === '#' && otherPrefix === '*' ? false
+                 :                                         new Error("Shouldn't happen!")
+                 ;
         }
         else {
-            return otherPrefix ? false : numeric <= otherNumeric;
+            return otherLength > length ? true
+                 : otherLength < length ? false
+                 :                        numeric < otherNumeric
+                 ;
         }
     }
     
     next() {
-        const targetLen = this.value.length;
+        const valueLen = this.length;
+        const prefixLen = this.prefix.length;
         const _next = String(this.numeric + 1);
         
-        return _next.length > targetLen ? _next : _next.leftPad(targetLen, '0');
+        if ((_next.length + prefixLen) >= valueLen) {
+            return this.prefix + _next;
+        }
+        
+        // Can't do this every time: padStart will *trim* the string to specified length!
+        // Talk about sane API.
+        return this.prefix + _next.padStart(valueLen - prefixLen, '0');
     }
     
     prev() {
-        const targetLen = this.value.length;
-        const _prev = this.numeric - 1;
+        const valueLen = this.length;
+        const prefixLen = this.prefix.length;
+        let _prev = this.numeric - 1;
         
+        // There's no sane way to decrement digit strings below 0
         if (_prev < 0) {
-            throw new Error(`Cannot calculate previous value for ${this.value}!`);
+            return null;
         }
         
-        return String(_prev).leftPad(targetLen, '0');
+        _prev = String(_prev);
+        
+        if ((_prev.length + prefixLen) >= valueLen) {
+            return this.prefix + _prev;
+        }
+        
+        return this.prefix + _prev.padStart(valueLen - prefixLen, '0');
     }
 }
 

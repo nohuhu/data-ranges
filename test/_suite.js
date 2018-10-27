@@ -146,7 +146,6 @@ const makeSuite = (def, ctor) => {
                     }
                 }
                 
-                debugger;
                 object = new RangeSet(args);
             };
             
