@@ -1,5 +1,3 @@
-const expect = require('expect.js');
-
 describe("RangeSet", function() {
     let RangeSet;
     
@@ -7,10 +5,10 @@ describe("RangeSet", function() {
         expect(function() {
             RangeSet = require('../src/RangeSet');
         })
-        .to.not.throwException();
+        .not.toThrow();
     });
     
     it("should export RangeSet constructor", function() {
-        expect(typeof RangeSet).to.be('function');
+        expect(typeof RangeSet).toBe('function');
     });
 });

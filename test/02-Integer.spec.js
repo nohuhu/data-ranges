@@ -1,4 +1,3 @@
-const expect = require('expect.js');
 const { makeTests, toArray } = require('./_suite');
 
 makeTests('Integer', [{
@@ -256,18 +255,18 @@ makeTests('Integer', [{
     method: (range) => {
         range.add(toArray('-3 0 2 5'));
         
-        expect(range + '').to.be('-3,0,2,5');
-        expect(range.size).to.be(4);
+        expect(range + '').toBe('-3,0,2,5');
+        expect(range.size).toBe(4);
         
         range.add(toArray('-5 4 -1'));
         
-        expect(range + '').to.be('-5,-3,-1..0,2,4..5');
-        expect(range.size).to.be(7);
+        expect(range + '').toBe('-5,-3,-1..0,2,4..5');
+        expect(range.size).toBe(7);
         
         range.add(toArray('-2 3 -4'));
         
-        expect(range + '').to.be('-5..0,2..5');
-        expect(range.size).to.be(10);
+        expect(range + '').toBe('-5..0,2..5');
+        expect(range.size).toBe(10);
         
         range.add(1);
     },
@@ -432,23 +431,23 @@ makeTests('Integer', [{
     method: (range) => {
         range.remove(1);
         
-        expect(range + '').to.be('-5..0,2..5');
-        expect(range.size).to.be(10);
+        expect(range + '').toBe('-5..0,2..5');
+        expect(range.size).toBe(10);
         
         range.remove(toArray('-2 3 -4'));
         
-        expect(range + '').to.be('-5,-3,-1..0,2,4..5');
-        expect(range.size).to.be(7);
+        expect(range + '').toBe('-5,-3,-1..0,2,4..5');
+        expect(range.size).toBe(7);
         
         range.remove(toArray('-5 4 -1'));
         
-        expect(range + '').to.be('-3,0,2,5');
-        expect(range.size).to.be(4);
+        expect(range + '').toBe('-3,0,2,5');
+        expect(range.size).toBe(4);
         
         range.remove(toArray('-3 0 2 5'));
         
-        expect(range + '').to.be('');
-        expect(range.size).to.be(0);
+        expect(range + '').toBe('');
+        expect(range.size).toBe(0);
     },
     methodInput: [],
 }, {

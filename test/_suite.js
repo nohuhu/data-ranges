@@ -1,4 +1,3 @@
-const expect = require('expect.js');
 const path = require('path');
 
 const RangeSet = require('../src/RangeSet');
@@ -34,7 +33,7 @@ const makeSuite = (def, ctor) => {
                         it(`should return ${desc(want)} when passed in array`, function() {
                             const have = object.contains(input);
                             
-                            expect(have).to.eql(want);
+                            expect(have).toEqual(want);
                         });
                         
                         if (checkEach) {
@@ -42,7 +41,7 @@ const makeSuite = (def, ctor) => {
                                 it(`should return ${desc(want)} for ${value}`, function() {
                                     const have = object.contains(value);
                                     
-                                    expect(have).to.be(want);
+                                    expect(have).toBe(want);
                                 });
                             });
                         }
@@ -53,7 +52,7 @@ const makeSuite = (def, ctor) => {
                         it(`should return ${desc(want)}`, function() {
                             const have = object.contains(input);
                             
-                            expect(have).to.be(want);
+                            expect(have).toBe(want);
                         });
                     });
                 }
@@ -71,16 +70,16 @@ const makeSuite = (def, ctor) => {
                 describe(`containsAll(), input: ${desc(input)}`, function() {
                     let have;
                     
-                    before(function() {
+                    beforeEach(function() {
                         have = object.containsAll(input);
                     });
                     
                     it("should return a RangeSet", function() {
-                        expect(have instanceof RangeSet).to.be(true);
+                        expect(have instanceof RangeSet).toBe(true);
                     });
                     
                     it(`return value should be ${desc(want)}`, function() {
-                        expect(have.toString()).to.eql(want);
+                        expect(have.toString()).toEqual(want);
                     });
                 });
             });
@@ -98,13 +97,13 @@ const makeSuite = (def, ctor) => {
                 
                 it("should iterate over values", function() {
                     for (let have of object.by()) {
-                        expect(have).to.be(wantCopy.shift());
+                        expect(have).toBe(wantCopy.shift());
                         result.push(have);
                     }
                 });
                 
                 it("should return all expected values", function() {
-                    expect(result).to.eql(want);
+                    expect(result).toEqual(want);
                 });
             });
         }
@@ -116,7 +115,7 @@ const makeSuite = (def, ctor) => {
             
             describe("toString()", function() {
                 it(`should return ${desc(want)}`, function() {
-                    expect(object.toString()).to.be(want);
+                    expect(object.toString()).toBe(want);
                 });
             });
         }
@@ -128,7 +127,7 @@ const makeSuite = (def, ctor) => {
             
             describe("size getter", function() {
                 it(`should return ${want}`, function() {
-                    expect(object.size).to.be(want);
+                    expect(object.size).toBe(want);
                 });
             });
         }
@@ -151,12 +150,12 @@ const makeSuite = (def, ctor) => {
             
             if (exception) {
                 it("should throw exception", function() {
-                    expect(ctorFn).to.throwException(exception);
+                    expect(ctorFn).toThrow(exception);
                 });
             }
             else {
                 it("should not throw exception", function() {
-                    expect(ctorFn).to.not.throwException();
+                    expect(ctorFn).not.toThrow();
                 });
             }
         });
@@ -172,12 +171,12 @@ const makeSuite = (def, ctor) => {
                     
                     if (exception) {
                         it("should throw exception", function() {
-                            expect(methodFn).to.throwException(exception);
+                            expect(methodFn).toThrow(exception);
                         });
                     }
                     else {
                         it("should not throw exception", function() {
-                            expect(methodFn).not.to.throwException();
+                            expect(methodFn).not.toThrow();
                         });
                     }
                 });
@@ -194,12 +193,12 @@ const makeSuite = (def, ctor) => {
                     
                     if (exception) {
                         it("should throw exception", function() {
-                            except(methodFn).to.throwException();
+                            except(methodFn).toThrow();
                         });
                     }
                     else {
                         it("should not throw exception", function() {
-                            expect(methodFn).to.not.throwException();
+                            expect(methodFn).not.toThrow();
                         });
                     }
                 });
@@ -230,7 +229,7 @@ const makeTests = (type, tests) => {
     describe(`${type} ranges`, function() {
         describe("module tests", function() {
             it("should export Range constructor", function() {
-                expect(typeof Range).to.be('function');
+                expect(typeof Range).toBe('function');
             });
         });
         
